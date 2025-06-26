@@ -36,22 +36,25 @@ jobs:
       run: go test -v ./...
 
   deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Docker Login
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        
-    - name: Build and Push
-      uses: docker/build-push-action@v4
-      with:
-        push: true
-        tags: |
-          ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:${{ github.ref_name }}
-          ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:latest
+        needs: test
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        steps:
+          - uses: actions/checkout@v3
+          
+          - name: Docker Login
+            uses: docker/login-action@v2
+            with:
+              username: ${{ secrets.DOCKER_HUB_USERNAME }}
+              password: ${{ secrets.DOCKER_HUB_TOKEN }}
+              
+          - name: Build and Push
+            uses: docker/build-push-action@v4
+            with:
+              context: .
+              push: true
+              tags: |
+                ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:${{ github.ref_name }}
+                ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:latest
+              build-args: |
+                GO_VERSION=1.24
