@@ -4,5 +4,8 @@ COPY . .
 RUN go build -o /parcel-tracker
 
 FROM alpine:latest
+RUN apk add --no-cache sqlite
 COPY --from=builder /parcel-tracker /parcel-tracker
+COPY tracker.db /data/  # Копируем базу с таблицей
+WORKDIR /data
 CMD ["/parcel-tracker"]
