@@ -1,0 +1,36 @@
+name: CI/CD Pipeline
+on:
+  push:
+    branches: [main]
+  release:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - run: go test -v ./...
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:${{ github.ref_name }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:latest
