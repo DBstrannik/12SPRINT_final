@@ -11,48 +11,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.24'
-      
       - name: Install SQLite
         run: sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
-      
       - name: Prepare test DB
         run: |
-          sqlite3 test.db "CREATE TABLE IF NOT EXISTS parcel (
+          sqlite3 test.db "CREATE TABLE parcel (
             number INTEGER PRIMARY KEY AUTOINCREMENT,
             client INTEGER NOT NULL,
             status TEXT NOT NULL,
             address TEXT NOT NULL,
             created_at TEXT NOT NULL
           )"
-          echo "DB_PATH=test.db" >> $GITHUB_ENV
-      
       - name: Run tests
         run: go test -v ./...
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    # Важное изменение: deploy только для пуша в main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
-      
       - name: Docker Login
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-          
-      - name: Build and Push Docker Image
+      - name: Build and Push
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:${{ github.sha }}
-            ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/parcel-tracker:latest
